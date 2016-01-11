@@ -20,8 +20,8 @@ var connections = new Array();
 
 var encoder = new GIFEncoder(width,height);
 encoder.start();
-encoder.setRepeat(0);
-encoder.setDelay(delay);
+encoder.setRepeat(-1);
+encoder.setDelay(10);
 encoder.setQuality(10);
 encoder.addFrame(getRandomFrame());
 encoder.end();
@@ -111,7 +111,7 @@ function createNewFrame() {
   out.writeByte(0xf9);
   out.writeByte(4); // block size (?)
   out.writeByte(0x00); // packed field for transparent gifs
-  out.writeShort(delay);
+  out.writeShort( Math.round( delay/10)  );
   out.writeByte(0); // transparent index
   out.writeByte(0); // block terminator
 
@@ -202,7 +202,12 @@ function startServer(){
     for(var i = 0; i < connections.length;i++){
       connections[i].write(newFrame,'binary');
     }
-  },100);
+    createNextImage();
+  },1000);
+}
+
+function createNextImage(){
+  
 }
 
 
