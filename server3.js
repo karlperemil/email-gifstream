@@ -197,7 +197,7 @@ function startServer(){
       connections.remove(res);
       console.log('Subscriber left: ' + connections.length + " total.\n");
     });
-  }).listen(8080, '0.0.0.0');
+  }).listen(process.env.PORT || 8080, '0.0.0.0');
 
   setInterval(function(){
     frameCount++;
