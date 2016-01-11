@@ -6,6 +6,7 @@ var pngFileStream = require('png-file-stream');
 var GIFEncoder = require('gifencoder');
 var fs = require('fs');
 var http = require('http');
+var pngparse = require('pngparse');
 
 var width = 320;
 var height = 200;
@@ -104,7 +105,7 @@ function getImagePixels(px) {
   return pixels2;
 };
 
-function createNewFrame() {
+function createNewFrame(data) {
   var out = new ByteArray();
   //graphical control extension
   out.writeByte(0x21); 
@@ -131,6 +132,7 @@ function createNewFrame() {
 
 
   //create red image
+  /*
   var w = width;
   var h = height;
   var count = 0;
@@ -142,9 +144,10 @@ function createNewFrame() {
       pixels[count++] = (frameCount*10)%255
       pixels[count++] = 255
     }
-  }
+  } 
+  */
 
-  var imagePixels = getImagePixels(pixels);
+  var imagePixels = getImagePixels(data);
   var indexedPixels = analyzePixels(imagePixels);
   //local color table
 
@@ -154,10 +157,12 @@ function createNewFrame() {
     out.writeByte(0);
 
   //image data
-  var enc = new LZWEncoder(w,h,indexedPixels,8);
+  var enc = new LZWEncoder(width,height,indexedPixels,8);
   enc.encode(out);
 
   var finalData = out.getData();
+
+  latestFrame = finalData;
 
   return finalData;
 }
@@ -196,18 +201,42 @@ function startServer(){
 
   setInterval(function(){
     frameCount++;
-    console.log('yo')
-    var newFrame = createNewFrame();
-    console.log(newFrame);
+    console.log('new frame: ', frameCount );
     for(var i = 0; i < connections.length;i++){
-      connections[i].write(newFrame,'binary');
+      connections[i].write(latestFrame,'binary');
     }
     createNextImage();
   },1000);
 }
 
 function createNextImage(){
+  var fc = frameCount;
+  var options = {
+    screenSize: {
+      width: width,
+      height: height
+    },
+    shotSize: {
+      width: width,
+      height: height
+    },
+    siteType: 'html'
+  };
+  webshot('<html><body bgcolor="white">' + new Date() +'</body></html>', 'gifpart'+frameCount+'.png', options, function(err) {
+    if(err)
+      console.log(err);
+    convertPngToRGB(fc);
+  });
+
   
+}
+
+function convertPngToRGB(fc){
+  pngparse.parseFile('gifpart' + fc + '.png', function(err,data){
+    if(err)
+      console.log(err);
+    createNewFrame(data.data);
+  });
 }
 
 
